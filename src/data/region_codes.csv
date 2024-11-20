@@ -1,48 +1,48 @@
 code;country
+AU;Australia
 AT;Austria
 BE;Belgium
+BR;Brazil
 BG;Bulgaria
+CA;Canada
+CN;China
+HR;Croatia
 CY;Cyprus
 CZ;Czech Republic
-DE;Germany
 DK;Denmark
 EE;Estonia
-ES;Spain
 FI;Finland
 FR;France
+DE;Germany
 GR;Greece
-HR;Croatia
 HU;Hungary
+IN;India
+ID;Indonesia
 IE;Ireland
 IT;Italy
+JP;Japan
+LV;Latvia
 LT;Lithuania
 LU;Luxembourg
-LV;Latvia
 MT;Malta
+MX;Mexico
 NL;Netherlands
+NO;Norway
 PL;Poland
 PT;Portugal
 RO;Romania
-SE;Sweden
-SI;Slovenia
+RU;Russia
 SK;Slovakia
+SI;Slovenia
+ZA;South Africa
+KR;South Korea
+ES;Spain
+SE;Sweden
+CH;Switzerland
+TW;Taiwan
+TR;Turkey
 GB;United Kingdom
 US;United States
-JP;Japan
-CN;China
-CA;Canada
-KR;South Korea
-BR;Brazil
-IN;India
-MX;Mexico
-RU;Russia
-AU;Australia
-CH;Switzerland
-TR;Turkey
-TW;Taiwan
-NO;Norway
-ID;Indonesia
-ZA;South Africa
 WA;RoW Asia and Pacific
 WL;RoW America
 WE;RoW Europe
