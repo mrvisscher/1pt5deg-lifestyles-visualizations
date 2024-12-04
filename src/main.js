@@ -1,4 +1,4 @@
-import * as d3 from "d3";
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import { figure_1 } from "./data/figure_1";
 import { region_codes } from "./data/region_codes";
 
