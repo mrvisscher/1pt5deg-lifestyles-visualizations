@@ -9,7 +9,7 @@ const countries = {
   DE: "Germany",
 }
 
-const colors = ["#0ab1b1", "#f7941d", "#f15a22", "#0082c9"]
+let colors = ["#0ab1b1", "#f7941d", "#f15a22", "#0082c9"]
 
 
 class Graph { 
@@ -247,7 +247,9 @@ class Menu {
   cb_practice_onclick(event){
     if(event.target.active){
       event.target.active = false
-      this.practices.splice(this.practices.indexOf(event.target.practice), 1)
+      const index = this.practices.indexOf(event.target.practice)
+      this.practices.splice(index, 1)
+      colors.push(colors.splice(index, 1)[0])
       event.target.style["background-color"] = "beige"
     }
     else{
