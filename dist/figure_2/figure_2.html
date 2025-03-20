@@ -4,26 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>1.5 degree lifestyles</title>
-    <script type="module" crossorigin src="/figure_1/figure_1.js"></script>
+    <script type="module" crossorigin src="/figure_2/figure_2.js"></script>
     <link rel="modulepreload" crossorigin href="/modulepreload-polyfill.js">
-    <link rel="stylesheet" crossorigin href="/figure_1/figure_1.css">
+    <link rel="stylesheet" crossorigin href="/figure_2/figure_2.css">
   </head>
   <body>
-
     <div id="menu">
-      <div id="countries" class="menu-block white">
-        <p id="country_divider"></p>
-        <button id="select_all">Select all</button>
-        <button id="deselect_all">Deselect all</button>
+      <div id="practices" class="menu-block white"></div>
+      <div id="years" class="menu-block white">
+        <div class="year">2015</div>
+        <div class="year">2030</div>
+        <div class="year">2050</div>
       </div>
-      <div id="years" class="menu-block white"></div>
       <div id="credits" class="menu-block black"><a href="https://doi.org/10.1016/j.spc.2023.12.031">Based on the work by Stephanie Cap, Arjan de Koning, Arnold Tukker & Laura Scherer. </a></div>
     </div>
-    <div id="targets">
-      <div id="target-title-2030" class="target-title">2030</div>
-      <div id="target-title-2050" class="target-title">2050</div>
-    </div>
-
     <svg id="graph"></svg>
     <svg class="fixed-bottom" width="100%" height="50"></svg>
     <div id="tooltip"></div>

@@ -1,24 +1,35 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+import { figure_2 } from "./data/figure_2";
+
+const countries = {
+  SE: "Sweden",
+  LV: "Latvia",
+  HU: "Hungary",
+  ES: "Spain",
+  DE: "Germany",
+}
+
+const colors = ["#0ab1b1", "#f7941d", "#f15a22", "#0082c9"]
 
 
 class Graph { 
   marginTop = 40;
   marginRight = 30;
   marginBottom = 35;
-  marginLeft = 100;
+  marginLeft = 55;
 
   width_factor = 0.7;
 
-  bar_height = 5;
+  bar_height = 20;
   bar_padding = 2;
-  bucket_padding = 3;
+  bucket_padding = 10;
 
   constructor(year, practices){
     this.year = year
     this.practices = practices
 
     this.v_scale = this.vertical_scale(["Germany", "Spain", "Hungary", "Latvia", "Sweden"])
-    this.h_scale = this.horizontal_scale(20)
+    this.h_scale = this.horizontal_scale(2)
 
     this.clear()
     this.draw()
@@ -57,32 +68,29 @@ class Graph {
       .attr("x", this.h_scale(20))
       .attr("y", 42)
       .text("Emissions (tCO₂e yr⁻¹ per capita)");
-    
-    this.svg.append("line")
-      .attr("id", "2030-target")
-      .attr("x1", this.h_scale(2.38))
-      .attr("x2", this.h_scale(2.38))
-      .attr("y1", 0)
-      .attr("y2", this.height() - this.marginBottom)
-      .attr("stroke", "black")
-      .attr("stroke-width", 1)
-    
-    this.svg.append("line")
-      .attr("id", "2050-target")
-      .attr("x1", this.h_scale(0.61))
-      .attr("x2", this.h_scale(0.61))
-      .attr("y1", 15)
-      .attr("y2", this.height() - this.marginBottom)
-      .attr("stroke", "black")
-      .attr("stroke-width", 1)
   
     // setup the bars for each year
-    this.years.forEach(year => this.draw_year(year))
+    this.practices.forEach(practice => this.draw_practice(practice))
+
+    this.draw_seeker_line()
 
   }
 
+  data(){
+    let data = []
+    this.figure_2.forEach(d => {if(this.practices.includes(d.name)){data.push(d)}})
+    return data
+  }
+
   height(){
-    return 1000
+    return (this.bar_height + this.bucket_padding * 2) * 5  + this.marginBottom + this.marginTop
+  }
+
+  height(){
+    return 5 * this.practices.length * (this.bar_height + this.bar_padding * 2) + 
+    5 * this.bucket_padding * 2 +
+    this.marginBottom + 
+    this.marginTop 
   }
 
   width(){
@@ -108,18 +116,18 @@ class Graph {
     return scale
   }
 
-  draw_year(year){
-    this.svg.selectAll(".bar.bar" + year)
-      .data(figure_1)
+  draw_practice(practice){
+    this.svg.selectAll(".bar.bar" + practice)
+      .data(["SE", "LV", "HU", "ES", "DE"])
       .enter()
       .append("rect")
-      .attr("class", "bar bar" + year)
-      .attr("x", this.marginLeft)
-      .attr("y", this.get_bar_y.bind(this, year))
-      .attr("width", d => this.h_scale(d[year]) - this.marginLeft)
+      .attr("class", "bar bar" + practice)
+      .attr("x", this.marginLeft + 1)
+      .attr("y", this.get_bar_y.bind(this, practice))
+      .attr("width", country => this.h_scale(figure_2[practice][this.year][country]) - this.marginLeft)
       .attr("height", this.bar_height)
-      .attr("fill", year_colors[year])
-      .on("mouseover", this.cb_bar_mouseover.bind(this, year))
+      .attr("fill", colors[this.practices.findIndex(el => el == practice)])
+      .on("mouseover", this.cb_bar_mouseover.bind(this, practice))
       .on("mouseout", this.cb_bar_mouseout.bind(this));
   }
 
@@ -140,26 +148,27 @@ class Graph {
     .attr("x2", x)
   }
 
-  get_bar_y(year, data){
-    const index = this.years.findIndex(el => el == year)
-    const y = this.v_scale(data.region) + this.bucket_padding + this.bar_padding + (index * (this.bar_height + 2 * this.bar_padding))
+
+  get_bar_y(practice, country){
+    const index = this.practices.findIndex(el => el == practice)
+    const y = this.v_scale(countries[country]) + this.bucket_padding + this.bar_padding + (index * (this.bar_height + 2 * this.bar_padding))
     if(isNaN(y)){return -100}
     return y
   }
 
   set_width(width){
-    this.h_scale = this.horizontal_scale(20)
+    this.h_scale = this.horizontal_scale(2)
 
     this.clear()
     this.draw()
 
   }
 
-  cb_bar_mouseover(year, event, data){
+  cb_bar_mouseover(practice, event, country){
     const tooltip = d3.select("#tooltip");
-    const bar_edge = this.marginLeft + this.h_scale(data[year]) - this.marginLeft
+    const bar_edge = this.h_scale(figure_2[practice][this.year][country])
 
-    const html = "Region: " + region_codes[data["region"]] + "<br>Year: " + year + "<br>Value: " + data[year] + " tCO₂e/cap"
+    const html = `${figure_2[practice].formatted}: ${figure_2[practice][this.year][country]} tCO₂e yr⁻¹ per capita`
 
     if (window.innerWidth < 800){
       tooltip.html(html)
@@ -173,7 +182,7 @@ class Graph {
     else {
       tooltip.html(html)
       .style("left", bar_edge + 20 + "px")
-      .style("top", this.get_bar_y(year, data) + "px")
+      .style("top", this.get_bar_y(practice, country) + "px")
       .style("right", "unset")
       .style("bottom", "unset")
       .style("opacity", 1)
@@ -195,21 +204,34 @@ class Graph {
 class Menu {
   constructor(){
     this.menu = document.getElementById("menu")
+    this.practices_el = document.getElementById("practices")
+    this.years_el = document.getElementById("years")
+
+    this.year = 2015
+    this.practices = ["eat", "sleep", "rave", "repeat"]
+
+
+    this.setup_practices()
+    this.setup_years()
   }
 
   build_graph(){
-    new Graph(2000, ["blah"])
+    new Graph(this.year, this.practices)
+    this.setup_practices()
+    this.setup_years()
   }
 
-  setup_countries(enabled_countries){
-    for (let i = 0; i < regions.length; i++){
-      const button = document.createElement("button")
-      button.region = Object.keys(region_codes)[i]
-      button.innerHTML = region_codes[button.region]
-      button.className = "countrybutton"
+  setup_practices(){
+    this.practices_el.innerHTML = ""
+    for (const [practice, data] of Object.entries(figure_2) ){
+      const button = document.createElement("div")
+      button.practice = practice
+      button.innerHTML = data.formatted
+      button.className = "practicebutton"
+      button.draggable = true
 
-      if (enabled_countries.includes(button.region)){
-        button.style["background-color"] = "#f7941d"
+      if (this.practices.includes(practice)){
+        button.style["background-color"] = colors[this.practices.findIndex(el => el == practice)]
         button.active = true
       }
       else {
@@ -217,53 +239,41 @@ class Menu {
         button.active = false
       }
 
-      button.onclick = this.cb_country_onclick.bind(this)
-      this.countries_el.insertBefore(button, document.getElementById("country_divider"))
+      button.onclick = this.cb_practice_onclick.bind(this)
+      this.practices_el.appendChild(button)
     }
   }
 
-  cb_country_onclick(event){
+  cb_practice_onclick(event){
     if(event.target.active){
       event.target.active = false
+      this.practices.splice(this.practices.indexOf(event.target.practice), 1)
       event.target.style["background-color"] = "beige"
     }
     else{
       event.target.active = true
-      event.target.style["background-color"] = "#f7941d"
+      this.practices.push(event.target.practice)
+      event.target.style["background-color"] = colors[this.practices.length - 1]
     }
   
     this.build_graph()
   }
 
-  setup_years(enabled_years){
-    for (let i = 0; i < years.length; i++){
-      const button = document.createElement("button")
-      button.innerHTML = years[i]
-
-      if (enabled_years.includes(button.innerHTML)){
-        button.style["background-color"] = year_colors[years[i]]
-        button.active = true
+  setup_years(){
+    this.years_el.childNodes.forEach(node => {
+      if (node.nodeName != "DIV"){return}
+      if (node.innerHTML == this.year){
+        node.style["background-color"] = "goldenrod"
       }
       else {
-        button.style["background-color"] = "beige"
-        button.active = false
+        node.style["background-color"] = "white"
+        node.onclick = this.cb_year_onclick.bind(this)
       }
-
-      button.onclick = this.cb_year_onclick.bind(this)
-      this.years_el.appendChild(button)
-    }
+    })
   }
 
   cb_year_onclick(event){
-    if(event.target.active){
-      event.target.active = false
-      event.target.style["background-color"] = "beige"
-    }
-    else{
-      event.target.active = true
-      event.target.style["background-color"] = year_colors[event.target.innerHTML]
-    }
-  
+    this.year = event.target.innerHTML  
     this.build_graph()
   }
 
