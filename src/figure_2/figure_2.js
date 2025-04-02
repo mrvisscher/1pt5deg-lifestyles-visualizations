@@ -208,6 +208,7 @@ class Menu {
     this.menu = document.getElementById("menu")
     this.practices_el = document.getElementById("practices")
     this.years_el = document.getElementById("years")
+    this.type_el = document.getElementById("type")
 
     this.year = 2015
     this.practices = []
@@ -227,6 +228,7 @@ class Menu {
     new Graph(this.data(), this.year, this.practices)
     this.setup_practices()
     this.setup_years()
+    this.setup_type()
   }
 
   setup_practices(){
@@ -291,21 +293,24 @@ class Menu {
     this.build_graph()
   }
 
-  select_countries(){
-    for(const child of this.countries_el.getElementsByClassName("countrybutton")){
-      child.active = true
-      child.style["background-color"] = "#EEAC20"
+  setup_type(){
+    if (this.type == "relative"){
+      this.type_el.innerHTML = "Relative values: %"
     }
+    else {
+      this.type_el.innerHTML = "Absolute values: tCO\u2082e yr\u207b\u00b9 per capita"
+    }
+
+    this.type_el.onclick = this.cb_type_onclick.bind(this)
+  }
+
+  cb_type_onclick(event){
+    if (this.type == "relative"){this.type = "absolute"}
+    else {this.type = "relative"}
     this.build_graph()
   }
 
-  deselect_countries(){
-    for(const child of this.countries_el.getElementsByClassName("countrybutton")){
-      child.active = false
-      child.style["background-color"] = "beige"
-    }
-    this.build_graph()
-  }
+
 }
 
 const menu = new Menu()

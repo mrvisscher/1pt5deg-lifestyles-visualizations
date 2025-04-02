@@ -137,4 +137,15 @@ button{
   cursor: pointer;
 }
 
-
+#type{
+  margin-left: auto;
+  padding: 5px;
+  text-align: center;
+  width: fit-content;
+  border: solid;
+  border-color: black;
+  border-width: 2px;
+  font-size: small;
+  cursor: pointer;
+  user-select: none;
+}
