@@ -159,7 +159,7 @@ class Graph {
   }
 
   set_width(width){
-    this.h_scale = this.horizontal_scale(2)
+    this.h_scale = this.horizontal_scale(this.max_x())
 
     this.clear()
     this.draw()
