@@ -1,5 +1,5 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
-import { figure_2 } from "./data/figure_2";
+import { figure_2_absolute, figure_2_relative } from "./data/figure_2";
 
 const countries = {
   SE: "Sweden",
@@ -24,7 +24,8 @@ class Graph {
   bar_padding = 2;
   bucket_padding = 10;
 
-  constructor(year, practices){
+  constructor(data, year, practices){
+    this.data = data
     this.year = year
     this.practices = practices
 
@@ -78,7 +79,7 @@ class Graph {
 
   max_x(){
     let values = []
-    for (const [practice, data] of Object.entries(figure_2) ){
+    for (const [practice, data] of Object.entries(this.data) ){
       if (!this.practices.includes(practice)){continue}
       for (const val of Object.values(data[this.year])){values.push(val)}
     }
@@ -124,7 +125,7 @@ class Graph {
       .attr("class", "bar bar" + practice)
       .attr("x", this.marginLeft + 1)
       .attr("y", this.get_bar_y.bind(this, practice))
-      .attr("width", country => this.h_scale(figure_2[practice][this.year][country]) - this.marginLeft)
+      .attr("width", country => this.h_scale(this.data[practice][this.year][country]) - this.marginLeft)
       .attr("height", this.bar_height)
       .attr("fill", colors[this.practices.findIndex(el => el == practice)])
       .on("mouseover", this.cb_bar_mouseover.bind(this, practice))
@@ -167,9 +168,9 @@ class Graph {
 
   cb_bar_mouseover(practice, event, country){
     const tooltip = d3.select("#tooltip");
-    const bar_edge = this.h_scale(figure_2[practice][this.year][country])
+    const bar_edge = this.h_scale(this.data[practice][this.year][country])
 
-    const html = `${figure_2[practice].formatted}: ${figure_2[practice][this.year][country]} tCO₂e yr⁻¹ per capita`
+    const html = `${this.data[practice].formatted}: ${this.data[practice][this.year][country]} ${this.data[practice]["unit"]}`
 
     if (window.innerWidth < 800){
       tooltip.html(html)
@@ -210,21 +211,27 @@ class Menu {
 
     this.year = 2015
     this.practices = []
+    this.type = "relative"
 
 
     this.setup_practices()
     this.setup_years()
   }
 
+  data(){
+    if (this.type == "relative"){return figure_2_relative}
+    else {return figure_2_absolute}
+  }
+
   build_graph(){
-    new Graph(this.year, this.practices)
+    new Graph(this.data(), this.year, this.practices)
     this.setup_practices()
     this.setup_years()
   }
 
   setup_practices(){
     this.practices_el.innerHTML = ""
-    for (const [practice, data] of Object.entries(figure_2) ){
+    for (const [practice, data] of Object.entries(this.data()) ){
       const button = document.createElement("div")
       button.practice = practice
       button.innerHTML = data.formatted
