@@ -29,7 +29,7 @@ class Graph {
     this.practices = practices
 
     this.v_scale = this.vertical_scale(["Germany", "Spain", "Hungary", "Latvia", "Sweden"])
-    this.h_scale = this.horizontal_scale(2)
+    this.h_scale = this.horizontal_scale(this.max_x())
 
     this.clear()
     this.draw()
@@ -47,7 +47,7 @@ class Graph {
 
   draw(){
     this.svg.attr("width", "100%")
-    this.svg.attr("height", this.height())
+    this.svg.attr("height", "100%")
 
     // adding the y axis
     this.svg.append("g")
@@ -65,9 +65,9 @@ class Graph {
       .append("text")
       .attr("class", "x-axis-title")
       .attr("text-anchor", "end")
-      .attr("x", this.h_scale(20))
+      .attr("x", this.h_scale(this.max_x()))
       .attr("y", 42)
-      .text("Emissions (tCO₂e yr⁻¹ per capita)");
+      .text("Avoided emissions (tCO₂e yr⁻¹ per capita)");
   
     // setup the bars for each year
     this.practices.forEach(practice => this.draw_practice(practice))
@@ -76,14 +76,14 @@ class Graph {
 
   }
 
-  data(){
-    let data = []
-    this.figure_2.forEach(d => {if(this.practices.includes(d.name)){data.push(d)}})
-    return data
-  }
-
-  height(){
-    return (this.bar_height + this.bucket_padding * 2) * 5  + this.marginBottom + this.marginTop
+  max_x(){
+    let values = []
+    for (const [practice, data] of Object.entries(figure_2) ){
+      if (!this.practices.includes(practice)){continue}
+      for (const val of Object.values(data[this.year])){values.push(val)}
+    }
+    const max = Math.max(...values)
+    return max + max * 0.2
   }
 
   height(){
@@ -132,12 +132,13 @@ class Graph {
   }
 
   draw_seeker_line(){
+    console.log(this.svg)
     this.svg.append("line")
       .attr("id", "seeker_line")
       .attr("x1", -500)
       .attr("x2", -500)
       .attr("y1", this.marginTop)
-      .attr("y2", this.height() - this.marginBottom)
+      .attr("y2", this.svg.node().getBoundingClientRect().height - this.marginBottom)
       .attr("stroke", "black")
       .attr("stroke-width", 1)
   }
@@ -208,7 +209,7 @@ class Menu {
     this.years_el = document.getElementById("years")
 
     this.year = 2015
-    this.practices = ["eat", "sleep", "rave", "repeat"]
+    this.practices = []
 
 
     this.setup_practices()
@@ -234,6 +235,9 @@ class Menu {
         button.style["background-color"] = colors[this.practices.findIndex(el => el == practice)]
         button.active = true
       }
+      else if (this.practices.length == 4) {
+        continue
+      }
       else {
         button.style["background-color"] = "beige"
         button.active = false
@@ -252,6 +256,7 @@ class Menu {
       colors.push(colors.splice(index, 1)[0])
       event.target.style["background-color"] = "beige"
     }
+    else if (this.practices.length == 4){return}
     else{
       event.target.active = true
       this.practices.push(event.target.practice)
