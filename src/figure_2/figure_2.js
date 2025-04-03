@@ -20,14 +20,15 @@ class Graph {
 
   width_factor = 0.7;
 
-  bar_height = 20;
+  bar_height = 30;
   bar_padding = 2;
   bucket_padding = 10;
 
-  constructor(data, year, practices){
+  constructor(data, years, practices, label){
     this.data = data
-    this.year = year
+    this.years = years
     this.practices = practices
+    this.label = label
 
     this.v_scale = this.vertical_scale(["Germany", "Spain", "Hungary", "Latvia", "Sweden"])
     this.h_scale = this.horizontal_scale(this.max_x())
@@ -48,7 +49,7 @@ class Graph {
 
   draw(){
     this.svg.attr("width", "100%")
-    this.svg.attr("height", "100%")
+    this.svg.attr("height", this.height())
 
     // adding the y axis
     this.svg.append("g")
@@ -68,7 +69,7 @@ class Graph {
       .attr("text-anchor", "end")
       .attr("x", this.h_scale(this.max_x()))
       .attr("y", 42)
-      .text("Avoided emissions (tCO₂e yr⁻¹ per capita)");
+      .text(this.label);
   
     // setup the bars for each year
     this.practices.forEach(practice => this.draw_practice(practice))
@@ -81,7 +82,9 @@ class Graph {
     let values = []
     for (const [practice, data] of Object.entries(this.data) ){
       if (!this.practices.includes(practice)){continue}
-      for (const val of Object.values(data[this.year])){values.push(val)}
+      for (const year of ["2015", "2030", "2050"]){
+        for (const val of Object.values(data[year])){values.push(val)}
+      }
     }
     const max = Math.max(...values)
     return max + max * 0.2
@@ -118,11 +121,27 @@ class Graph {
   }
 
   draw_practice(practice){
-    this.svg.selectAll(".bar.bar" + practice)
+    for (const year of this.years){
+      this.svg.selectAll(".yearbar.year" + year)
+        .data(["SE", "LV", "HU", "ES", "DE"])
+        .enter()
+        .append("rect")
+        .attr("class", ".yearbar.year" + year)
+        .attr("x", this.marginLeft + 1)
+        .attr("y", this.get_bar_y.bind(this, practice, year))
+        .attr("width", country => this.h_scale(this.data[practice][year][country]) - this.marginLeft)
+        .attr("height", (this.bar_height / this.years.length) - 2)
+        .attr("fill", colors[this.practices.findIndex(el => el == practice)])
+        .on("mouseover", this.cb_bar_mouseover.bind(this, practice, year))
+        .on("mouseout", this.cb_bar_mouseout.bind(this));
+    }
+    return
+
+    this.svg.selectAll()
       .data(["SE", "LV", "HU", "ES", "DE"])
       .enter()
       .append("rect")
-      .attr("class", "bar bar" + practice)
+      .attr("class", "bar")
       .attr("x", this.marginLeft + 1)
       .attr("y", this.get_bar_y.bind(this, practice))
       .attr("width", country => this.h_scale(this.data[practice][this.year][country]) - this.marginLeft)
@@ -130,6 +149,23 @@ class Graph {
       .attr("fill", colors[this.practices.findIndex(el => el == practice)])
       .on("mouseover", this.cb_bar_mouseover.bind(this, practice))
       .on("mouseout", this.cb_bar_mouseout.bind(this));
+    
+    for (const year of ["2015", "2030", "2050"]){
+      if (year == this.year){continue}
+      this.svg.selectAll(".yearline.year" + year)
+        .data(["SE", "LV", "HU", "ES", "DE"])
+        .enter()
+        .append("line")
+        .attr("class", ".yearline.year" + year)
+        .attr("x1", country => this.h_scale(this.data[practice][year][country]))
+        .attr("x2", country => this.h_scale(this.data[practice][year][country]))
+        .attr("y1", country => this.get_bar_y(practice, country) + 2)
+        .attr("y2", country => this.get_bar_y(practice, country) + this.bar_height - 4)
+        .attr("stroke", "darkgrey")
+        .attr("stroke-width", 3)
+    }
+    
+
   }
 
   draw_seeker_line(){
@@ -151,9 +187,16 @@ class Graph {
   }
 
 
-  get_bar_y(practice, country){
-    const index = this.practices.findIndex(el => el == practice)
-    const y = this.v_scale(countries[country]) + this.bucket_padding + this.bar_padding + (index * (this.bar_height + 2 * this.bar_padding))
+  get_bar_y(practice, year, country){
+    const practice_index = this.practices.findIndex(el => el == practice)
+    const year_index = this.years.findIndex(el => el == year)
+
+    const y = this.v_scale(countries[country]) + 
+      this.bucket_padding + 
+      this.bar_padding + 
+      (practice_index * (this.bar_height + 2 * this.bar_padding)) +
+      (year_index * (this.bar_height / this.years.length))
+
     if(isNaN(y)){return -100}
     return y
   }
@@ -166,11 +209,15 @@ class Graph {
 
   }
 
-  cb_bar_mouseover(practice, event, country){
+  cb_bar_mouseover(practice, year, event, country){
     const tooltip = d3.select("#tooltip");
-    const bar_edge = this.h_scale(this.data[practice][this.year][country])
+    const bar_edge = this.h_scale(this.data[practice][year][country])
 
-    const html = `${this.data[practice].formatted}: ${this.data[practice][this.year][country]} ${this.data[practice]["unit"]}`
+    const html = `
+    ${this.data[practice].formatted}: </br>
+    <b>${this.data[practice][year][country]} ${this.data[practice]["unit"]}</b> </br>
+    ${year}
+    `
 
     if (window.innerWidth < 800){
       tooltip.html(html)
@@ -184,7 +231,7 @@ class Graph {
     else {
       tooltip.html(html)
       .style("left", bar_edge + 20 + "px")
-      .style("top", this.get_bar_y(practice, country) + "px")
+      .style("top", this.get_bar_y(practice, year, country) + "px")
       .style("right", "unset")
       .style("bottom", "unset")
       .style("opacity", 1)
@@ -210,9 +257,10 @@ class Menu {
     this.years_el = document.getElementById("years")
     this.type_el = document.getElementById("type")
 
-    this.year = 2015
+    this.years = ["2015"]
     this.practices = []
-    this.type = "relative"
+    this.type = "absolute"
+    this.label = "Avoided emissions (tCO₂e yr⁻¹ per capita)"
 
 
     this.setup_practices()
@@ -225,7 +273,7 @@ class Menu {
   }
 
   build_graph(){
-    new Graph(this.data(), this.year, this.practices)
+    new Graph(this.data(), this.years, this.practices, this.label)
     this.setup_practices()
     this.setup_years()
     this.setup_type()
@@ -278,18 +326,25 @@ class Menu {
   setup_years(){
     this.years_el.childNodes.forEach(node => {
       if (node.nodeName != "DIV"){return}
-      if (node.innerHTML == this.year){
+      if (this.years.includes(node.innerHTML)){
         node.style["background-color"] = "goldenrod"
       }
       else {
         node.style["background-color"] = "white"
-        node.onclick = this.cb_year_onclick.bind(this)
       }
+      node.onclick = this.cb_year_onclick.bind(this)
     })
   }
 
   cb_year_onclick(event){
-    this.year = event.target.innerHTML  
+    const node = event.target
+    if (this.years.includes(node.innerHTML)){
+      this.years = this.years.filter(el => el != node.innerHTML)
+    }
+    else {
+      this.years.push(node.innerHTML)
+    }
+    this.years.sort()
     this.build_graph()
   }
 
@@ -305,8 +360,14 @@ class Menu {
   }
 
   cb_type_onclick(event){
-    if (this.type == "relative"){this.type = "absolute"}
-    else {this.type = "relative"}
+    if (this.type == "relative"){
+      this.type = "absolute"
+      this.label = "Avoided emissions (tCO₂e yr⁻¹ per capita)"
+    }
+    else {
+      this.type = "relative"
+      this.label = "Avoided emissions (%)"
+    }
     this.build_graph()
   }
 
