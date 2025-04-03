@@ -7,7 +7,7 @@ To deploy you also need the Firebase CLI: `npm install -g firebase-tools`
 ## Useful commands
 
 - `npm install` Installs all dependencies from package.json
-- `npm start` Runs a development server on localhost
+- `npm run dev` Runs a development server on localhost
 - `npm run build` Builds all the files into the src directory
 - `firebase login` Login to the firebase CLI so we can deploy to prod
 - `firebase hosting:channel:deploy preview_name` deploy to a preview channel
