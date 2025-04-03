@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/figure_3",
+        "destination": "/figure_3/figure_3.html"
+      },
+      {
         "source": "/figure_2",
         "destination": "/figure_2/figure_2.html"
       },
