@@ -1,5 +1,5 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
-import { figure_2_absolute, figure_2_relative } from "./data/figure_3";
+import { figure_3 } from "./data/figure_3";
 
 const countries = {
   SE: "Sweden",
@@ -9,6 +9,20 @@ const countries = {
   DE: "Germany",
 }
 
+const countries_inv = {
+  "Sweden": "SE",
+  "Latvia": "LV",
+  "Hungary": "HU",
+  "Spain": "ES", 
+  "Germany": "DE"
+}
+
+const formatted_options = []
+
+for (const opt of Object.values(figure_3)){
+  formatted_options.push(opt.formatted)
+}
+
 let colors = ["#0ab1b1", "#f7941d", "#f15a22", "#0082c9"]
 
 
@@ -16,21 +30,21 @@ class Graph {
   marginTop = 40
   marginRight = 30;
   marginBottom = 35;
-  marginLeft = 55;
+  marginLeft = 200;
 
   width_factor = 0.7;
 
-  bar_height = 30;
+  bar_height = 20;
   bar_padding = 2;
   bucket_padding = 10;
 
-  constructor(data, years, practices, label){
+  constructor(data, year, country){
     this.data = data
-    this.years = years
-    this.practices = practices
-    this.label = label
+    this.year = year
+    this.country = country
+    this.country_code = countries_inv[this.country]
 
-    this.v_scale = this.vertical_scale(["Germany", "Spain", "Hungary", "Latvia", "Sweden"])
+    this.v_scale = this.vertical_scale(this.sorted_options())
     this.h_scale = this.horizontal_scale(this.max_x())
 
     this.clear()
@@ -38,6 +52,25 @@ class Graph {
 
     window.addEventListener("resize", (event) => {this.set_width(window.innerWidth * 0.7)})
 
+  }
+
+  sorted_options(){
+    let sortable = []
+    for (const option in this.data) {
+      sortable.push([option, this.data[option][this.country_code][this.year]]);
+    }
+    sortable.sort(function(a, b) {
+      return a[1] - b[1];
+    });
+
+    let sorted = []
+
+    for (const option of sortable) {
+      sorted.push(this.data[option[0]].formatted)
+    }
+
+    console.log(sorted)
+    return sorted
   }
 
   clear(){
@@ -72,8 +105,7 @@ class Graph {
       .text(this.label);
   
     // setup the bars for each year
-    this.practices.forEach(practice => this.draw_practice(practice))
-
+    this.draw_practices()
     this.draw_seeker_line()
 
   }
@@ -81,18 +113,16 @@ class Graph {
   max_x(){
     let values = []
     for (const [practice, data] of Object.entries(this.data) ){
-      if (!this.practices.includes(practice)){continue}
-      for (const year of ["2015", "2030", "2050"]){
-        for (const val of Object.values(data[year])){values.push(val)}
-      }
+      const country_data = data[this.country_code]
+      values.push(country_data[this.year])
     }
     const max = Math.max(...values)
     return max + max * 0.2
   }
 
   height(){
-    return 5 * this.practices.length * (this.bar_height + this.bar_padding * 2) + 
-    5 * this.bucket_padding * 2 +
+    return formatted_options.length * (this.bar_height + this.bar_padding * 2) + 
+    this.bucket_padding * 2 +
     this.marginBottom + 
     this.marginTop 
   }
@@ -120,56 +150,23 @@ class Graph {
     return scale
   }
 
-  draw_practice(practice){
-    for (const year of this.years){
-      this.svg.selectAll(".yearbar.year" + year)
-        .data(["SE", "LV", "HU", "ES", "DE"])
+  draw_practices(){
+    this.svg.selectAll(".yearbar.year" + this.year)
+        .data(Object.keys(this.data))
         .enter()
         .append("rect")
-        .attr("class", ".yearbar.year" + year)
+        .attr("class", ".yearbar.year" + this.year)
         .attr("x", this.marginLeft + 1)
-        .attr("y", this.get_bar_y.bind(this, practice, year))
-        .attr("width", country => this.h_scale(this.data[practice][year][country]) - this.marginLeft)
-        .attr("height", (this.bar_height / this.years.length) - 2)
-        .attr("fill", colors[this.practices.findIndex(el => el == practice)])
-        .on("mouseover", this.cb_bar_mouseover.bind(this, practice, year))
+        .attr("y", this.get_bar_y.bind(this))
+        .attr("width", practice => this.h_scale(this.data[practice][this.country_code][this.year]) - this.marginLeft)
+        .attr("height", this.bar_height)
+        .attr("fill", colors[0])
+        .on("mouseover", this.cb_bar_mouseover.bind(this, this.practice, this.year))
         .on("mouseout", this.cb_bar_mouseout.bind(this));
-    }
     return
-
-    this.svg.selectAll()
-      .data(["SE", "LV", "HU", "ES", "DE"])
-      .enter()
-      .append("rect")
-      .attr("class", "bar")
-      .attr("x", this.marginLeft + 1)
-      .attr("y", this.get_bar_y.bind(this, practice))
-      .attr("width", country => this.h_scale(this.data[practice][this.year][country]) - this.marginLeft)
-      .attr("height", this.bar_height)
-      .attr("fill", colors[this.practices.findIndex(el => el == practice)])
-      .on("mouseover", this.cb_bar_mouseover.bind(this, practice))
-      .on("mouseout", this.cb_bar_mouseout.bind(this));
-    
-    for (const year of ["2015", "2030", "2050"]){
-      if (year == this.year){continue}
-      this.svg.selectAll(".yearline.year" + year)
-        .data(["SE", "LV", "HU", "ES", "DE"])
-        .enter()
-        .append("line")
-        .attr("class", ".yearline.year" + year)
-        .attr("x1", country => this.h_scale(this.data[practice][year][country]))
-        .attr("x2", country => this.h_scale(this.data[practice][year][country]))
-        .attr("y1", country => this.get_bar_y(practice, country) + 2)
-        .attr("y2", country => this.get_bar_y(practice, country) + this.bar_height - 4)
-        .attr("stroke", "darkgrey")
-        .attr("stroke-width", 3)
-    }
-    
-
   }
 
   draw_seeker_line(){
-    console.log(this.svg)
     this.svg.append("line")
       .attr("id", "seeker_line")
       .attr("x1", -500)
@@ -187,15 +184,13 @@ class Graph {
   }
 
 
-  get_bar_y(practice, year, country){
-    const practice_index = this.practices.findIndex(el => el == practice)
-    const year_index = this.years.findIndex(el => el == year)
+  get_bar_y(practice){
+    const name = this.data[practice]["formatted"]
 
-    const y = this.v_scale(countries[country]) + 
+    const y = this.v_scale(name) + 
       this.bucket_padding + 
-      this.bar_padding + 
-      (practice_index * (this.bar_height + 2 * this.bar_padding)) +
-      (year_index * (this.bar_height / this.years.length))
+      this.bar_padding -
+      this.bar_height / 2
 
     if(isNaN(y)){return -100}
     return y
@@ -253,31 +248,54 @@ class Graph {
 class Menu {
   constructor(){
     this.menu = document.getElementById("menu")
-    this.practices_el = document.getElementById("practices")
+    this.countries_el = document.getElementById("countries")
     this.years_el = document.getElementById("years")
     this.type_el = document.getElementById("type")
 
-    this.years = ["2015"]
+    this.country = "Sweden"
     this.practices = []
-    this.type = "absolute"
+    this.year = "2030"
     this.label = "Avoided emissions (tCO₂e yr⁻¹ per capita)"
 
 
-    this.setup_practices()
-    this.setup_years()
-  }
-
-  data(){
-    if (this.type == "relative"){return figure_2_relative}
-    else {return figure_2_absolute}
+    this.setup_countries()
   }
 
   build_graph(){
-    new Graph(this.data(), this.years, this.practices, this.label)
-    this.setup_practices()
-    this.setup_years()
-    this.setup_type()
+    new Graph(figure_3, this.year, this.country)
+    this.setup_countries()
   }
+
+  setup_countries(enabled_countries){
+    this.countries_el.innerHTML = ""
+
+    for (let country of Object.values(countries)){
+      const button = document.createElement("button")
+      button.innerHTML = country
+      button.className = "countrybutton"
+
+      if (this.country == country){
+        button.style["background-color"] = "#f7941d"
+        button.active = true
+      }
+      else {
+        button.style["background-color"] = "beige"
+        button.active = false
+      }
+
+      button.onclick = this.cb_country_onclick.bind(this)
+      this.countries_el.appendChild(button)
+    }
+  }
+
+  cb_country_onclick(event){
+    if(event.target.innerHTML != this.country){
+      this.country = event.target.innerHTML
+    }
+ 
+    this.build_graph()
+  }
+  
 
   setup_practices(){
     this.practices_el.innerHTML = ""
