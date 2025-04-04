@@ -38,11 +38,12 @@ class Graph {
   bar_padding = 2;
   bucket_padding = 10;
 
-  constructor(data, year, country){
+  constructor(data, year, country, show_base){
     this.data = data
     this.year = year
     this.country = country
     this.country_code = countries_inv[this.country]
+    this.show_base = show_base
 
     this.v_scale = this.vertical_scale(this.sorted_options())
     this.h_scale = this.horizontal_scale(this.max_x())
@@ -57,6 +58,8 @@ class Graph {
   sorted_options(){
     let sortable = []
     for (const option in this.data) {
+      if (option.startsWith("base")){continue}
+
       sortable.push([option, this.data[option][this.country_code][this.year]]);
     }
     sortable.sort(function(a, b) {
@@ -68,6 +71,9 @@ class Graph {
     for (const option of sortable) {
       sorted.push(this.data[option[0]].formatted)
     }
+
+    if (this.show_base){sorted = [this.data["base_2"].formatted, ...sorted, this.data["base_1"].formatted]}
+
     return sorted
   }
 
@@ -111,6 +117,7 @@ class Graph {
   max_x(){
     let values = []
     for (const [practice, data] of Object.entries(this.data) ){
+      if(!this.show_base && practice.startsWith("base")){continue}
       const country_data = data[this.country_code]
       values.push(country_data[this.year])
     }
@@ -158,7 +165,7 @@ class Graph {
         .attr("y", this.get_bar_y.bind(this))
         .attr("width", practice => this.h_scale(this.data[practice][this.country_code][this.year]) - this.marginLeft)
         .attr("height", this.bar_height)
-        .attr("fill", colors[0])
+        .attr("fill", practice => {if(practice.startsWith("base")){return colors[3]} else{return colors[0]}})
         .on("mouseover", (ev, practice) => this.cb_bar_mouseover(practice))
         .on("mouseout", this.cb_bar_mouseout.bind(this));
     return
@@ -248,21 +255,23 @@ class Menu {
     this.menu = document.getElementById("menu")
     this.countries_el = document.getElementById("countries")
     this.years_el = document.getElementById("years")
-    this.type_el = document.getElementById("type")
+    this.base_el = document.getElementById("base")
 
     this.country = "Sweden"
     this.practices = []
     this.year = "2030"
     this.label = "Avoided emissions (tCO₂e yr⁻¹ per capita)"
+    this.base = true
 
 
     this.setup_countries()
   }
 
   build_graph(){
-    new Graph(figure_3, this.year, this.country)
+    new Graph(figure_3, this.year, this.country, this.base)
     this.setup_countries()
     this.setup_years()
+    this.setup_baseline()
   }
 
   setup_countries(){
@@ -317,6 +326,28 @@ class Menu {
 
     this.build_graph()
   }
+
+  setup_baseline(){
+    if (this.base){
+      this.base_el.setAttribute("class", "black")
+    }
+    else {
+      this.base_el.setAttribute("class", "")
+    }
+
+    this.base_el.onclick = this.cb_baseline_onclick.bind(this)
+  }
+
+  cb_baseline_onclick(event){
+    if (this.base){
+      this.base = false
+    }
+    else {
+      this.base = true
+    }
+    this.build_graph()
+  }
+
 
 }
 

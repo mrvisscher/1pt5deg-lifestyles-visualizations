@@ -1,4 +1,52 @@
 export const figure_3 = {
+    "base_1": {
+        "description": "Undefined",
+        "formatted": "Partially-decarbonized baseline",
+        "SE": {
+            "2030": 4.33,
+            "2050": 3.66
+        },
+        "LV": {
+            "2030": 3.2,
+            "2050": 2.22
+        },
+        "HU": {
+            "2030": 3.58,
+            "2050": 3.18
+        },
+        "ES": {
+            "2030": 3.44,
+            "2050": 2.55
+        },
+        "DE": {
+            "2030": 4.8,
+            "2050": 3.65
+        }
+    },
+    "base_2": {
+        "description": "Undefined",
+        "formatted": "Highest impact lifestyle change portfolio",
+        "SE": {
+            "2030": 2.11,
+            "2050": 1.42
+        },
+        "LV": {
+            "2030": 1.77,
+            "2050": 1.08
+        },
+        "HU": {
+            "2030": 1.03,
+            "2050": 0.53
+        },
+        "ES": {
+            "2030": 1.18,
+            "2050": 0.61
+        },
+        "DE": {
+            "2030": 1.82,
+            "2050": 0.99
+        }
+    },
     "housing_1": {
         "description": "I will repair my ICT products and use them for longer",
         "formatted": "Repair ICT devices",
