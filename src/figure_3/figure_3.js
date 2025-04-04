@@ -68,8 +68,6 @@ class Graph {
     for (const option of sortable) {
       sorted.push(this.data[option[0]].formatted)
     }
-
-    console.log(sorted)
     return sorted
   }
 
@@ -102,7 +100,7 @@ class Graph {
       .attr("text-anchor", "end")
       .attr("x", this.h_scale(this.max_x()))
       .attr("y", 42)
-      .text(this.label);
+      .text("Emissions (tCO₂e yr⁻¹ per capita)");
   
     // setup the bars for each year
     this.draw_practices()
@@ -161,7 +159,7 @@ class Graph {
         .attr("width", practice => this.h_scale(this.data[practice][this.country_code][this.year]) - this.marginLeft)
         .attr("height", this.bar_height)
         .attr("fill", colors[0])
-        .on("mouseover", this.cb_bar_mouseover.bind(this, this.practice, this.year))
+        .on("mouseover", (ev, practice) => this.cb_bar_mouseover(practice))
         .on("mouseout", this.cb_bar_mouseout.bind(this));
     return
   }
@@ -204,14 +202,14 @@ class Graph {
 
   }
 
-  cb_bar_mouseover(practice, year, event, country){
+  cb_bar_mouseover(practice){
     const tooltip = d3.select("#tooltip");
-    const bar_edge = this.h_scale(this.data[practice][year][country])
+    const bar_edge = this.h_scale(this.data[practice][this.country_code][this.year])
 
     const html = `
     ${this.data[practice].formatted}: </br>
-    <b>${this.data[practice][year][country]} ${this.data[practice]["unit"]}</b> </br>
-    ${year}
+    <b>${this.data[practice][this.country_code][this.year]} tCO\u2082e yr\u207b\u00b9 per capita</b> </br>
+    ${this.year}
     `
 
     if (window.innerWidth < 800){
@@ -226,7 +224,7 @@ class Graph {
     else {
       tooltip.html(html)
       .style("left", bar_edge + 20 + "px")
-      .style("top", this.get_bar_y(practice, year, country) + "px")
+      .style("top", this.get_bar_y(practice, this.year, this.country) + "px")
       .style("right", "unset")
       .style("bottom", "unset")
       .style("opacity", 1)
@@ -264,9 +262,10 @@ class Menu {
   build_graph(){
     new Graph(figure_3, this.year, this.country)
     this.setup_countries()
+    this.setup_years()
   }
 
-  setup_countries(enabled_countries){
+  setup_countries(){
     this.countries_el.innerHTML = ""
 
     for (let country of Object.values(countries)){
@@ -279,7 +278,7 @@ class Menu {
         button.active = true
       }
       else {
-        button.style["background-color"] = "beige"
+        button.style["background-color"] = "white"
         button.active = false
       }
 
@@ -295,57 +294,12 @@ class Menu {
  
     this.build_graph()
   }
-  
-
-  setup_practices(){
-    this.practices_el.innerHTML = ""
-    for (const [practice, data] of Object.entries(this.data()) ){
-      const button = document.createElement("div")
-      button.practice = practice
-      button.innerHTML = data.formatted
-      button.className = "practicebutton"
-      button.draggable = true
-
-      if (this.practices.includes(practice)){
-        button.style["background-color"] = colors[this.practices.findIndex(el => el == practice)]
-        button.active = true
-      }
-      else if (this.practices.length == 4) {
-        continue
-      }
-      else {
-        button.style["background-color"] = "beige"
-        button.active = false
-      }
-
-      button.onclick = this.cb_practice_onclick.bind(this)
-      this.practices_el.appendChild(button)
-    }
-  }
-
-  cb_practice_onclick(event){
-    if(event.target.active){
-      event.target.active = false
-      const index = this.practices.indexOf(event.target.practice)
-      this.practices.splice(index, 1)
-      colors.push(colors.splice(index, 1)[0])
-      event.target.style["background-color"] = "beige"
-    }
-    else if (this.practices.length == 4){return}
-    else{
-      event.target.active = true
-      this.practices.push(event.target.practice)
-      event.target.style["background-color"] = colors[this.practices.length - 1]
-    }
-  
-    this.build_graph()
-  }
 
   setup_years(){
     this.years_el.childNodes.forEach(node => {
       if (node.nodeName != "DIV"){return}
-      if (this.years.includes(node.innerHTML)){
-        node.style["background-color"] = "goldenrod"
+      if (this.year == node.innerHTML){
+        node.style["background-color"] = "#f15a22"
       }
       else {
         node.style["background-color"] = "white"
@@ -356,39 +310,13 @@ class Menu {
 
   cb_year_onclick(event){
     const node = event.target
-    if (this.years.includes(node.innerHTML)){
-      this.years = this.years.filter(el => el != node.innerHTML)
+    if (this.year == node.innerHTML){
+      return
     }
-    else {
-      this.years.push(node.innerHTML)
-    }
-    this.years.sort()
+    this.year = node.innerHTML
+
     this.build_graph()
   }
-
-  setup_type(){
-    if (this.type == "relative"){
-      this.type_el.innerHTML = "Relative values: %"
-    }
-    else {
-      this.type_el.innerHTML = "Absolute values: tCO\u2082e yr\u207b\u00b9 per capita"
-    }
-
-    this.type_el.onclick = this.cb_type_onclick.bind(this)
-  }
-
-  cb_type_onclick(event){
-    if (this.type == "relative"){
-      this.type = "absolute"
-      this.label = "Avoided emissions (tCO₂e yr⁻¹ per capita)"
-    }
-    else {
-      this.type = "relative"
-      this.label = "Avoided emissions (%)"
-    }
-    this.build_graph()
-  }
-
 
 }
 
