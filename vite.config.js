@@ -10,6 +10,7 @@ export default {
             "input":{
                 "figure_1/figure_1": "./src/figure_1/figure_1.html",
                 "figure_2/figure_2": "./src/figure_2/figure_2.html",
+                "figure_3/figure_3": "./src/figure_3/figure_3.html",
             },
             "output":{
                 "entryFileNames": `[name].js`,
