@@ -73,7 +73,8 @@ html, body{
   color: white;
 }
 
-#credits a{
+#credits, #credits a{
+  margin-top: 30px;
   font-size: small;
   color: white;
 }
@@ -90,6 +91,15 @@ html, body{
     margin: 10px;
     box-sizing: border-box;    
   }
+
+  .menu-block{
+    max-height: 100px;
+  }
+
+  #credits{
+    margin-top: auto;
+  }
+
 }
 
 #tooltip{
